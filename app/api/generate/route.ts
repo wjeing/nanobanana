@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     const completion = await openai.chat.completions.create({
-      model: "google/gemini-2.5-flash-image-preview",
+      model: "google/gemini-2.5-flash-preview-09-2025",
       messages: [
         {
           role: "user",
