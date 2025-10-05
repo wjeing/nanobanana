@@ -6,11 +6,14 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
-import { Upload, Sparkles, ImageIcon } from "lucide-react"
+import { Upload, Sparkles, ImageIcon, Loader2 } from "lucide-react"
 
 export function EditorSection() {
   const [prompt, setPrompt] = useState("")
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [generatedResult, setGeneratedResult] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -18,8 +21,47 @@ export function EditorSection() {
       const reader = new FileReader()
       reader.onloadend = () => {
         setUploadedImage(reader.result as string)
+        setGeneratedResult(null) // Clear previous result
+        setError(null) // Clear any errors
       }
       reader.readAsDataURL(file)
+    }
+  }
+
+  const handleGenerate = async () => {
+    if (!uploadedImage || !prompt.trim()) {
+      setError("Please upload an image and enter a prompt")
+      return
+    }
+
+    setIsGenerating(true)
+    setError(null)
+    setGeneratedResult(null)
+
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: prompt.trim(),
+          imageUrl: uploadedImage
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate')
+      }
+
+      setGeneratedResult(data.result)
+    } catch (error) {
+      console.error('Generation error:', error)
+      setError(error instanceof Error ? error.message : 'Failed to generate result')
+    } finally {
+      setIsGenerating(false)
     }
   }
 
@@ -86,10 +128,24 @@ export function EditorSection() {
                 />
               </div>
 
-              <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                <Sparkles className="w-4 h-4 mr-2" />
-                Generate Now
+              <Button
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                onClick={handleGenerate}
+                disabled={isGenerating || !uploadedImage || !prompt.trim()}
+              >
+                {isGenerating ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4 mr-2" />
+                )}
+                {isGenerating ? 'Generating...' : 'Generate Now'}
               </Button>
+
+              {error && (
+                <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
             </div>
           </Card>
 
@@ -106,9 +162,22 @@ export function EditorSection() {
             </div>
 
             <div className="border-2 border-dashed border-border rounded-lg aspect-square flex items-center justify-center bg-muted/30">
-              {uploadedImage ? (
+              {isGenerating ? (
+                <div className="text-center">
+                  <Loader2 className="w-16 h-16 text-primary mx-auto mb-4 animate-spin" />
+                  <p className="text-sm font-medium text-foreground">Generating with AI...</p>
+                  <p className="text-xs text-muted-foreground mt-1">Please wait while we process your image</p>
+                </div>
+              ) : generatedResult ? (
+                <div className="w-full h-full p-4">
+                  <div className="w-full h-full bg-card rounded-lg p-4 overflow-auto">
+                    <h4 className="font-semibold text-foreground mb-2">AI Analysis Result:</h4>
+                    <p className="text-sm text-foreground whitespace-pre-wrap">{generatedResult}</p>
+                  </div>
+                </div>
+              ) : uploadedImage ? (
                 <img
-                  src={uploadedImage || "/placeholder.svg"}
+                  src={uploadedImage}
                   alt="Uploaded"
                   className="w-full h-full object-cover rounded-lg"
                 />
@@ -116,15 +185,19 @@ export function EditorSection() {
                 <div className="text-center">
                   <ImageIcon className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                   <p className="text-sm font-medium text-foreground">Ready for instant generation</p>
-                  <p className="text-xs text-muted-foreground mt-1">Enter your prompt and unleash the power</p>
+                  <p className="text-xs text-muted-foreground mt-1">Upload an image and enter your prompt</p>
                 </div>
               )}
             </div>
 
-            <Button variant="outline" className="w-full mt-4 bg-transparent">
-              <Upload className="w-4 h-4 mr-2" />
-              Upload
-            </Button>
+            <label htmlFor="image-upload">
+              <Button variant="outline" className="w-full mt-4 bg-transparent cursor-pointer" asChild>
+                <div>
+                  <Upload className="w-4 h-4 mr-2" />
+                  {uploadedImage ? 'Change Image' : 'Upload Image'}
+                </div>
+              </Button>
+            </label>
           </Card>
         </div>
       </div>
