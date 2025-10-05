@@ -1,7 +1,28 @@
 {
-  "name": "my-v0-project",
-  "version": "0.1.0",
+  "name": "nanobanana",
+  "version": "1.0.0",
+  "description": "AI 图像分析工具 - 基于 Gemini 2.5 Flash Image API 的智能图像理解平台",
+  "main": "index.js",
   "private": true,
+  "keywords": [
+    "ai",
+    "image-analysis",
+    "gemini",
+    "nextjs",
+    "openrouter",
+    "image-processing",
+    "machine-learning"
+  ],
+  "author": "wjeing",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wjeing/nanobanana.git"
+  },
+  "homepage": "https://nanobanana.vercel.app",
+  "bugs": {
+    "url": "https://github.com/wjeing/nanobanana/issues"
+  },
   "scripts": {
     "build": "next build",
     "dev": "next dev",
